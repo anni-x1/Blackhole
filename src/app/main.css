@@ -1,0 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-void: #050505;
+  --bg-card: #0a0a0a;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-active: rgba(255, 255, 255, 0.2);
+  --accent-primary: #3b82f6;
+  --text-primary: #ededed;
+  --text-secondary: #888888;
+}
+
+body {
+  background-color: var(--bg-void);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+  selection-background-color: rgba(59, 130, 246, 0.3);
+}
+
+@layer utilities {
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .glass {
+    background: rgba(10, 10, 10, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .void-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), border-color 0.2s;
+  }
+
+  .void-input {
+    background: #0f0f0f;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+  }
+  .void-input:focus {
+    outline: none;
+    border-color: var(--border-active);
+    background: #141414;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.05);
+  }
+  .void-input::placeholder {
+    color: #444;
+  }
+
+  .void-button {
+    background: white;
+    color: black;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: opacity 0.2s;
+  }
+  .void-button:hover {
+    opacity: 0.9;
+  }
+  .void-button:active {
+    transform: scale(0.98);
+  }
+
+  .void-button-secondary {
+    background: rgba(255,255,255,0.05);
+    color: white;
+    border: 1px solid transparent;
+  }
+  .void-button-secondary:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.1);
+  }
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #555; }
