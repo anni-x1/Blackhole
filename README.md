@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Blackhole Vault
 
 Blackhole Vault is a secure, client-side encrypted password manager and vault built with Next.js. It follows a zero-knowledge architecture where encryption and decryption happen exclusively in the browser, ensuring the server only ever stores encrypted blobs.
@@ -77,3 +78,6 @@ Blackhole Vault is a secure, client-side encrypted password manager and vault bu
 ## License
 
 This project is licensed under the MIT License.
+=======
+# Blackhole
+>>>>>>> origin/main
