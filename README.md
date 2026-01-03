@@ -52,7 +52,7 @@ Blackhole Vault is a secure, client-side encrypted password manager and vault bu
 3.  **Configure Environment:**
     Create a `.env` file in the root directory and add the following variables:
     ```env
-    MONGODB_URI=your_mongodb_connection_string
+    DATABASE_URL=your_mongodb_connection_string
     SESSION_PASSWORD=complex_password_at_least_32_characters_long
     ```
 
