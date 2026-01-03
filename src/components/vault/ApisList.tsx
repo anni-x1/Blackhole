@@ -5,7 +5,7 @@ import { Copy, Eye, EyeOff, Trash2, Edit2, Check, Code, GripVertical } from 'luc
 import { useState, useEffect } from 'react';
 import { AddEditModal } from './AddEditModal';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
-import { Reorder } from 'framer-motion';
+import { Reorder, useDragControls, DragControls } from 'framer-motion';
 
 export function ApisList({ search }: { search: string }) {
   const { vaultData, saveVault } = useVault();
@@ -49,14 +49,12 @@ export function ApisList({ search }: { search: string }) {
         isReorderEnabled ? (
             <Reorder.Group axis="y" values={items} onReorder={handleReorder} className="grid gap-2">
                 {items.map(entry => (
-                    <Reorder.Item key={entry.id} value={entry}>
-                        <ApiRow 
-                        entry={entry} 
+                    <DraggableApiItem 
+                        key={entry.id} 
+                        entry={entry}
                         onEdit={() => setEditingEntry(entry)}
                         onDelete={() => setDeletingEntry(entry)}
-                        dragHandle={true}
-                        />
-                    </Reorder.Item>
+                    />
                 ))}
             </Reorder.Group>
         ) : (
@@ -67,7 +65,7 @@ export function ApisList({ search }: { search: string }) {
                     entry={entry} 
                     onEdit={() => setEditingEntry(entry)}
                     onDelete={() => setDeletingEntry(entry)}
-                    dragHandle={false}
+                    dragControls={null}
                     />
                 ))}
             </div>
@@ -95,7 +93,22 @@ export function ApisList({ search }: { search: string }) {
   );
 }
 
-function ApiRow({ entry, onEdit, onDelete, dragHandle }: { entry: VaultEntry, onEdit: () => void, onDelete: () => void, dragHandle: boolean }) {
+function DraggableApiItem({ entry, onEdit, onDelete }: { entry: VaultEntry, onEdit: () => void, onDelete: () => void }) {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item value={entry} dragListener={false} dragControls={dragControls}>
+        <ApiRow 
+            entry={entry} 
+            onEdit={onEdit}
+            onDelete={onDelete}
+            dragControls={dragControls}
+        />
+    </Reorder.Item>
+  );
+}
+
+function ApiRow({ entry, onEdit, onDelete, dragControls }: { entry: VaultEntry, onEdit: () => void, onDelete: () => void, dragControls: DragControls | null }) {
   const [isRevealed, setIsRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -113,8 +126,11 @@ function ApiRow({ entry, onEdit, onDelete, dragHandle }: { entry: VaultEntry, on
   return (
     <div className="group bg-[#0a0a0a] border border-white/5 hover:border-white/10 p-4 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all select-none">
       <div className="flex items-center gap-3 flex-1 min-w-0">
-        {dragHandle && (
-            <div className="cursor-grab active:cursor-grabbing text-secondary hover:text-white p-1">
+        {dragControls && (
+            <div 
+                onPointerDown={(e) => dragControls.start(e)}
+                className="cursor-grab active:cursor-grabbing text-secondary hover:text-white p-1 touch-none"
+            >
                 <GripVertical className="w-4 h-4" />
             </div>
         )}
@@ -128,8 +144,8 @@ function ApiRow({ entry, onEdit, onDelete, dragHandle }: { entry: VaultEntry, on
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="mr-4 w-32 flex justify-end">
-             <span className={`font-mono text-xs ${isRevealed ? 'text-blue-400' : 'text-secondary'}`}>
+        <div className="mr-4 w-32 flex justify-end overflow-hidden">
+             <span className={`font-mono text-xs truncate block text-right max-w-full ${isRevealed ? 'text-blue-400' : 'text-secondary'}`}>
                 {isRevealed ? entry.apikey : 'sk_••••••••'}
             </span>
         </div>
