@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Blackhole Vault
 
 Blackhole Vault is a secure, client-side encrypted password manager and vault built with Next.js. It follows a zero-knowledge architecture where encryption and decryption happen exclusively in the browser, ensuring the server only ever stores encrypted blobs.
@@ -11,7 +10,11 @@ Blackhole Vault is a secure, client-side encrypted password manager and vault bu
 - **Vault Management:**
     - Store and manage **Passwords** for various services.
     - Securely store **API Keys** and notes.
+    - **Drag & Drop Reordering:** Organize your passwords and API keys by simply dragging them into your preferred order.
     - **Playground:** An encrypted scratchpad for sensitive temporary text.
+- **Enhanced Privacy & UX:**
+    - **Smart Auto-Logout:** Automatically logs you out after 3 minutes of inactivity or when you close the browser.
+    - **Focus Friendly:** Unlike other vaults, Blackhole stays unlocked when you switch tabs, so you can easily copy-paste credentials.
 - **Modern UI:** Built with Tailwind CSS, Framer Motion, and a dark "void" aesthetic.
 - **Responsive Design:** Optimized for both desktop and mobile use.
 
@@ -50,7 +53,7 @@ Blackhole Vault is a secure, client-side encrypted password manager and vault bu
     Create a `.env` file in the root directory and add the following variables:
     ```env
     MONGODB_URI=your_mongodb_connection_string
-    SESSION_SECRET=a_very_long_random_string_at_least_32_chars
+    SESSION_PASSWORD=complex_password_at_least_32_characters_long
     ```
 
 4.  **Run the development server:**
@@ -67,6 +70,7 @@ Blackhole Vault is a secure, client-side encrypted password manager and vault bu
 2.  **Encryption:** Your vault data (passwords, API keys, etc.) is serialized to JSON and encrypted using `AES-GCM` with a random 96-bit IV.
 3.  **Storage:** Only the encrypted `ciphertext`, `iv`, `salt`, and `kdf` parameters are sent to the server.
 4.  **Decryption:** Upon retrieval, the encrypted blob is downloaded to the client. The client re-derives the key (or uses the session-cached key) to decrypt the blob locally.
+5.  **Session Security:** The session cookie is set to expire immediately upon browser closure (`ttl: 0`), ensuring no sessions persist on shared devices.
 
 ## Scripts
 
@@ -78,6 +82,3 @@ Blackhole Vault is a secure, client-side encrypted password manager and vault bu
 ## License
 
 This project is licensed under the MIT License.
-=======
-# Blackhole
->>>>>>> origin/main

@@ -1,39 +1,78 @@
 'use client';
 import { useVault } from '@/context/VaultContext';
 import { VaultEntry } from '@/types/vault';
-import { Copy, Eye, EyeOff, Trash2, Edit2, Check, Shield } from 'lucide-react';
-import { useState } from 'react';
+import { Copy, Eye, EyeOff, Trash2, Edit2, Check, Shield, GripVertical } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { AddEditModal } from './AddEditModal';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { Reorder } from 'framer-motion';
 
 export function PasswordsList({ search }: { search: string }) {
-  const { vaultData } = useVault();
+  const { vaultData, saveVault } = useVault();
   const [editingEntry, setEditingEntry] = useState<VaultEntry | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<VaultEntry | null>(null);
+  
+  // Local state for immediate UI feedback during drag
+  const [items, setItems] = useState<VaultEntry[]>([]);
 
-  const entries = vaultData?.passwords.filter(p => 
+  // Sync local items with vaultData when not dragging/searching
+  useEffect(() => {
+    if (vaultData?.passwords) {
+      setItems(vaultData.passwords);
+    }
+  }, [vaultData?.passwords]);
+
+  const filteredEntries = items.filter(p => 
     p.service.toLowerCase().includes(search.toLowerCase()) || 
     p.username?.toLowerCase().includes(search.toLowerCase())
-  ) || [];
+  );
+
+  const handleReorder = (newOrder: VaultEntry[]) => {
+    setItems(newOrder);
+    if (vaultData) {
+        saveVault({
+            ...vaultData,
+            passwords: newOrder
+        });
+    }
+  };
+
+  const isReorderEnabled = search.trim() === '';
 
   return (
     <div className="space-y-3 pb-20">
-      {entries.length === 0 ? (
+      {filteredEntries.length === 0 ? (
         <div className="text-center py-20 border border-dashed border-white/10 rounded-xl">
           <Shield className="w-8 h-8 mx-auto mb-3 text-secondary opacity-50" />
           <p className="text-sm text-secondary">No passwords stored</p>
         </div>
       ) : (
-        <div className="grid gap-2">
-          {entries.map(entry => (
-            <PasswordRow 
-              key={entry.id} 
-              entry={entry} 
-              onEdit={() => setEditingEntry(entry)}
-              onDelete={() => setDeletingEntry(entry)}
-            />
-          ))}
-        </div>
+        isReorderEnabled ? (
+          <Reorder.Group axis="y" values={items} onReorder={handleReorder} className="grid gap-2">
+            {items.map(entry => (
+              <Reorder.Item key={entry.id} value={entry}>
+                <PasswordRow 
+                  entry={entry} 
+                  onEdit={() => setEditingEntry(entry)}
+                  onDelete={() => setDeletingEntry(entry)}
+                  dragHandle={true}
+                />
+              </Reorder.Item>
+            ))}
+          </Reorder.Group>
+        ) : (
+          <div className="grid gap-2">
+             {filteredEntries.map(entry => (
+               <PasswordRow 
+                 key={entry.id} 
+                 entry={entry} 
+                 onEdit={() => setEditingEntry(entry)}
+                 onDelete={() => setDeletingEntry(entry)}
+                 dragHandle={false}
+               />
+             ))}
+          </div>
+        )
       )}
 
       {editingEntry && (
@@ -57,7 +96,7 @@ export function PasswordsList({ search }: { search: string }) {
   );
 }
 
-function PasswordRow({ entry, onEdit, onDelete }: { entry: VaultEntry, onEdit: () => void, onDelete: () => void }) {
+function PasswordRow({ entry, onEdit, onDelete, dragHandle }: { entry: VaultEntry, onEdit: () => void, onDelete: () => void, dragHandle: boolean }) {
   const [isRevealed, setIsRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -73,10 +112,17 @@ function PasswordRow({ entry, onEdit, onDelete }: { entry: VaultEntry, onEdit: (
   };
 
   return (
-    <div className="group bg-[#0a0a0a] border border-white/5 hover:border-white/10 p-4 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all">
-      <div className="flex-1 min-w-0">
-        <h3 className="font-medium text-sm text-white truncate">{entry.service}</h3>
-        <p className="text-secondary text-xs truncate mt-0.5">{entry.username}</p>
+    <div className="group bg-[#0a0a0a] border border-white/5 hover:border-white/10 p-4 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all select-none">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        {dragHandle && (
+            <div className="cursor-grab active:cursor-grabbing text-secondary hover:text-white p-1">
+                <GripVertical className="w-4 h-4" />
+            </div>
+        )}
+        <div className="flex-1 min-w-0">
+            <h3 className="font-medium text-sm text-white truncate">{entry.service}</h3>
+            <p className="text-secondary text-xs truncate mt-0.5">{entry.username}</p>
+        </div>
       </div>
 
       <div className="flex items-center gap-2">

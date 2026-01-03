@@ -24,7 +24,7 @@ interface VaultContextType {
 
 const VaultContext = createContext<VaultContextType | undefined>(undefined);
 
-const AUTO_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
+const AUTO_LOCK_TIMEOUT_MS = 3 * 60 * 1000;
 
 export function VaultProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -65,20 +65,17 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isUnlocked) return;
     const resetTimer = () => { lastActivityRef.current = Date.now(); };
-    const handleVisibilityChange = () => { if (document.hidden) lock(); };
     
     window.addEventListener('mousedown', resetTimer);
     window.addEventListener('keydown', resetTimer);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     const interval = setInterval(() => {
-      if (Date.now() - lastActivityRef.current > AUTO_LOCK_TIMEOUT_MS) lock();
+      if (Date.now() - lastActivityRef.current > AUTO_LOCK_TIMEOUT_MS) logout();
     }, 1000);
 
     return () => {
       window.removeEventListener('mousedown', resetTimer);
       window.removeEventListener('keydown', resetTimer);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
       clearInterval(interval);
     };
   }, [isUnlocked]);
