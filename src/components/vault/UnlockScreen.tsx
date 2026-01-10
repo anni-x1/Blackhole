@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useVault } from '@/context/VaultContext';
 import { Lock, UserPlus, ArrowRight, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Logo } from '@/components/ui/Logo';
 
 export function UnlockScreen() {
   const { login, register, error, isLoading } = useVault();
@@ -35,9 +36,7 @@ export function UnlockScreen() {
         className="void-panel p-8 rounded-2xl w-full max-w-[380px] flex flex-col items-center bg-[#0a0a0a]"
       >
         <div className="flex flex-col items-center mb-8">
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-                <div className="w-3 h-3 bg-black rounded-full" />
-            </div>
+            <Logo className="w-16 h-16 mb-4" />
             <h1 className="text-xl font-medium tracking-tight text-white">
                 {mode === 'register' ? 'Create Account' : 'Welcome Back'}
             </h1>

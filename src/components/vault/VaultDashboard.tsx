@@ -7,6 +7,7 @@ import { Playground } from './Playground';
 import { LogOut, Plus, Search } from 'lucide-react';
 import { AddEditModal } from './AddEditModal';
 import { motion } from 'framer-motion';
+import { Logo } from '@/components/ui/Logo';
 
 type Tab = 'passwords' | 'apis' | 'playground';
 
@@ -20,9 +21,7 @@ export function VaultDashboard() {
     <div className="max-w-5xl mx-auto px-6 py-12">
       <header className="flex items-center justify-between mb-12">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-            <div className="w-2 h-2 bg-black rounded-full" />
-          </div>
+          <Logo className="w-10 h-10" />
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-white">Blackhole</h1>
             <p className="text-xs text-secondary font-mono">{user?.email}</p>
