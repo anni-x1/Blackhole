@@ -7,8 +7,12 @@ export interface SessionData {
   isLoggedIn: boolean;
 }
 
+if (!process.env.SESSION_PASSWORD) {
+  throw new Error("SESSION_PASSWORD environment variable is not set.");
+}
+
 export const sessionOptions: SessionOptions = {
-  password: process.env.SESSION_PASSWORD || 'complex_password_at_least_32_characters_long',
+  password: process.env.SESSION_PASSWORD,
   cookieName: 'blackhole-session',
   ttl: 0,
   cookieOptions: {

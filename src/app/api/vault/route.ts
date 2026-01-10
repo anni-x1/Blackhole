@@ -1,16 +1,34 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Vault from '@/models/Vault';
+import User from '@/models/User';
 import { getSession } from '@/lib/session';
+
+async function validateAndRefreshSession(session: any) {
+  if (!session.isLoggedIn || !session.userId) return null;
+  
+  await connectDB();
+  const user = await User.findById(session.userId);
+  
+  // @ts-ignore
+  if (!user || user.activeSessionId !== session.sessionId) {
+    return null;
+  }
+
+  // Update last seen to keep the session alive
+  user.lastActiveAt = new Date();
+  await user.save();
+  return user;
+}
 
 export async function GET() {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await validateAndRefreshSession(session);
+  if (!user) {
+    return NextResponse.json({ error: 'Session expired or active on another device' }, { status: 401 });
   }
 
   try {
-    await connectDB();
     const vault = await Vault.findOne({ user: session.userId });
 
     if (!vault) {
@@ -25,15 +43,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await validateAndRefreshSession(session);
+  if (!user) {
+    return NextResponse.json({ error: 'Session expired or active on another device' }, { status: 401 });
   }
 
   try {
     const { vault: envelope } = await request.json();
     
-    await connectDB();
-
     const existingVault = await Vault.findOne({ user: session.userId });
 
     if (existingVault) {

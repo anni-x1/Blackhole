@@ -179,7 +179,13 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
         setVaultData(plaintext);
         setIsUnlocked(true);
       } else if (vaultRes.status === 404) {
-        setIsSetupMode(true);
+        // Automatically initialize empty vault for existing user without vault
+        const emptyVault: PlaintextVault = {
+            passwords: [], apis: [], playground: { scratch: '' }, meta: { version: 1 }
+        };
+        await saveVault(emptyVault);
+        setIsUnlocked(true);
+        setIsSetupMode(false);
       }
       
       return true;
@@ -210,11 +216,15 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     if (!keyRef.current || !saltRef.current) throw new Error('Vault locked');
     setVaultData(newData);
     const envelope = await encryptVault(keyRef.current, newData, saltRef.current);
-    await fetch('/api/vault', {
+    const res = await fetch('/api/vault', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ vault: envelope })
     });
+
+    if (!res.ok) {
+      throw new Error('Failed to save vault');
+    }
   };
 
   return (

@@ -8,6 +8,10 @@ export async function POST(request: Request) {
   try {
     const { email, authSalt, keyAuth } = await request.json();
 
+    if (typeof email !== 'string' || typeof authSalt !== 'string' || typeof keyAuth !== 'string') {
+      return NextResponse.json({ error: 'Invalid input types' }, { status: 400 });
+    }
+
     if (!email || !authSalt || !keyAuth) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }

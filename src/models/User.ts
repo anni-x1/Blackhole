@@ -15,6 +15,14 @@ const UserSchema = new Schema({
     type: String, 
     required: true 
   },
+  activeSessionId: {
+    type: String,
+    default: null
+  },
+  lastActiveAt: {
+    type: Date,
+    default: null
+  }
 }, { timestamps: true });
 
 const User = models.User || model('User', UserSchema);
