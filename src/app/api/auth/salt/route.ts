@@ -22,8 +22,9 @@ export async function POST(request: Request) {
       const fakeSalt = crypto
         .createHmac('sha256', process.env.SESSION_PASSWORD || 'fallback_secret')
         .update(email)
-        .digest('hex')
-        .substring(0, 32); // Match typical salt length
+        .digest()
+        .subarray(0, 16)
+        .toString('base64');
 
       return NextResponse.json({ salt: fakeSalt });
     }

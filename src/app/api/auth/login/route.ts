@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       // TIMING ATTACK PREVENTION:
       // Run a dummy comparison so the request takes the same amount of time
       // as if a user was found. We use a fixed hash to compare against.
-      const dummyHash = '$2a$12$dw7...dummyhash...'; // Random bcrypt hash
+      const dummyHash = '$2b$12$v017k6mGKW7JsASF3FImuuIDk5T6Ud5hmZmPISLllbxQJCqILHTuG'; // Valid bcrypt hash
       await bcrypt.compare(keyAuth, dummyHash);
       
       console.log('User not found in login (timing safe):', email);
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     session.userId = user._id.toString();
     session.email = user.email;
     session.isLoggedIn = true;
-    // @ts-ignore - adding custom field to session
+    // @ts-expect-error - adding custom field to session
     session.sessionId = newSessionId;
     await session.save();
 

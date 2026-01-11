@@ -3,6 +3,8 @@ import connectDB from '@/lib/db';
 import Vault from '@/models/Vault';
 import User from '@/models/User';
 import { getSession } from '@/lib/session';
+import { rateLimit } from '@/lib/rate-limit';
+import { headers } from 'next/headers';
 
 async function validateAndRefreshSession(session: any) {
   if (!session.isLoggedIn || !session.userId) return null;
@@ -48,8 +50,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Session expired or active on another device' }, { status: 401 });
   }
 
+  const headersList = await headers();
+  const ip = headersList.get('x-forwarded-for') || '127.0.0.1';
+  
+  // Rate limit vault updates: 10 per minute
+  const limitResult = rateLimit(ip, { limit: 10, windowMs: 60 * 1000 });
+  if (!limitResult.success) {
+    return NextResponse.json({ error: 'Too many vault updates. Please try again later.' }, { status: 429 });
+  }
+
   try {
     const { vault: envelope } = await request.json();
+
+    if (!envelope || !envelope.ciphertext) {
+      return NextResponse.json({ error: 'Invalid vault data' }, { status: 400 });
+    }
+
+    // Check for storage exhaustion: Max 500,000 characters for ciphertext
+    if (envelope.ciphertext.length > 500000) {
+      return NextResponse.json({ error: 'Vault too large' }, { status: 413 });
+    }
     
     const existingVault = await Vault.findOne({ user: session.userId });
 
