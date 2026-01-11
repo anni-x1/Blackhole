@@ -8,7 +8,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability, please do NOT open an issue. Email `security@example.com` instead.
+If you discover a security vulnerability, please do NOT open an issue. Email `hydrogenoxide280@gmail.com` instead.
 
 ## Security Architecture
 

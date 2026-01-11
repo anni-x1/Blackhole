@@ -54,8 +54,12 @@ export async function POST(request: Request) {
                             (Date.now() - new Date(user.lastActiveAt).getTime() < SESSION_TIMEOUT_MS);
 
     if (isSessionActive) {
+      const lastActiveDate = new Date(user.lastActiveAt);
+      const secondsAgo = Math.floor((Date.now() - lastActiveDate.getTime()) / 1000);
+      const timeStr = secondsAgo < 60 ? `${secondsAgo}s ago` : `${Math.floor(secondsAgo/60)}m ago`;
+      
       return NextResponse.json({ 
-        error: 'Account already in use on another device. Please log out there first or wait 5 minutes.' 
+        error: `Account already in use on another device (Active ${timeStr}). Please log out there first or wait 5 minutes.` 
       }, { status: 403 });
     }
 

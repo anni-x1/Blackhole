@@ -94,9 +94,29 @@ export function UnlockScreen() {
           </AnimatePresence>
 
           {(error || localError) && (
-            <div className="text-red-400 text-xs text-center py-2 bg-red-900/10 rounded border border-red-900/20">
-              {error || localError}
-            </div>
+            <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`text-xs text-center py-3 px-4 rounded-xl border flex flex-col items-center gap-2 ${
+                    (error || localError)?.includes('already in use') 
+                    ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' 
+                    : 'bg-red-950/30 border-red-500/20 text-red-400'
+                }`}
+            >
+              {(error || localError)?.includes('already in use') && (
+                <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center mb-1">
+                    <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ repeat: Infinity, duration: 2 }}
+                    >
+                        <Lock className="w-4 h-4 text-amber-500" />
+                    </motion.div>
+                </div>
+              )}
+              <span className="leading-relaxed">
+                {error || localError}
+              </span>
+            </motion.div>
           )}
 
           <button

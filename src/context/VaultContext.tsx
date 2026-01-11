@@ -165,7 +165,11 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, keyAuth: keyAuthB64 })
       });
-      if (!loginRes.ok) throw new Error('Invalid email or passcode');
+      
+      if (!loginRes.ok) {
+        const errorData = await loginRes.json();
+        throw new Error(errorData.error || 'Invalid email or passcode');
+      }
 
       setUser({ email });
       keyRef.current = keyVault;
