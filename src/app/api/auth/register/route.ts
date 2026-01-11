@@ -3,9 +3,20 @@ import connectDB from '@/lib/db';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 import { getSession } from '@/lib/session';
+import { rateLimit } from '@/lib/rate-limit';
+import { headers } from 'next/headers';
 
 export async function POST(request: Request) {
   try {
+    const headersList = await headers();
+    const ip = headersList.get('x-forwarded-for') || '127.0.0.1';
+
+    // 5 registrations per hour
+    const limitResult = rateLimit(ip, { limit: 5, windowMs: 60 * 60 * 1000 });
+    if (!limitResult.success) {
+      return NextResponse.json({ error: 'Too many registration attempts. Please try again later.' }, { status: 429 });
+    }
+
     const { email, authSalt, keyAuth } = await request.json();
 
     if (typeof email !== 'string' || typeof authSalt !== 'string' || typeof keyAuth !== 'string') {
