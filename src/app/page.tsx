@@ -2,6 +2,7 @@
 import { useVault } from '@/context/VaultContext';
 import { UnlockScreen } from '@/components/vault/UnlockScreen';
 import { VaultDashboard } from '@/components/vault/VaultDashboard';
+import { BlackholeLoader } from '@/components/ui/BlackholeLoader';
 
 export default function Home() {
   const { isUnlocked, isLoading } = useVault();
@@ -9,7 +10,7 @@ export default function Home() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <BlackholeLoader size="w-12 h-12" />
       </div>
     );
   }
