@@ -54,13 +54,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
+    const session = await getSession();
+
     // SINGLE SESSION ENFORCEMENT
     const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
     const isSessionActive = user.activeSessionId && 
                             user.lastActiveAt && 
                             (Date.now() - new Date(user.lastActiveAt).getTime() < SESSION_TIMEOUT_MS);
 
-    if (isSessionActive) {
+    // Block if session is active AND it's not the same session as the one in the current cookie.
+    // This allows users to re-login (unlock) after a page reload without waiting for timeout.
+    if (isSessionActive && user.activeSessionId !== session.sessionId) {
       const lastActiveDate = new Date(user.lastActiveAt);
       const secondsAgo = Math.floor((Date.now() - lastActiveDate.getTime()) / 1000);
       const timeStr = secondsAgo < 60 ? `${secondsAgo}s ago` : `${Math.floor(secondsAgo/60)}m ago`;
@@ -74,7 +78,6 @@ export async function POST(request: Request) {
     const newSessionId = crypto.randomUUID();
 
     console.log('Login successful for:', user.email);
-    const session = await getSession();
 
     user.activeSessionId = newSessionId;
     user.lastActiveAt = new Date();
