@@ -2,14 +2,20 @@
 
 import React, { useState } from 'react';
 import { useVault } from '@/context/VaultContext';
-import { Lock, UserPlus, ArrowRight, Mail } from 'lucide-react';
+import { Lock, ArrowRight, Mail, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '@/components/ui/Logo';
+
+const USERNAME_MIN = 3;
+const USERNAME_MAX = 30;
+const USERNAME_REGEX = /^[a-zA-Z0-9_-]+$/;
 
 export function UnlockScreen() {
   const { login, register, error, isLoading } = useVault();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [emailOrUsername, setEmailOrUsername] = useState('');
   const [passcode, setPasscode] = useState('');
   const [confirmPasscode, setConfirmPasscode] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
@@ -18,12 +24,17 @@ export function UnlockScreen() {
     e.preventDefault();
     setLocalError(null);
     if (mode === 'register') {
-      if (!email.includes('@')) return setLocalError('Invalid email');
+      if (!email.trim() || !email.includes('@')) return setLocalError('Enter a valid email');
+      const u = username.trim();
+      if (u.length < USERNAME_MIN) return setLocalError(`Username must be at least ${USERNAME_MIN} characters`);
+      if (u.length > USERNAME_MAX) return setLocalError(`Username must be at most ${USERNAME_MAX} characters`);
+      if (!USERNAME_REGEX.test(u)) return setLocalError('Username: only letters, numbers, underscores and hyphens');
       if (passcode.length < 12) return setLocalError('Passcode too short (min 12)');
-      if (passcode !== confirmPasscode) return setLocalError('Passcodes match failed');
-      await register(email, passcode);
+      if (passcode !== confirmPasscode) return setLocalError('Passcodes do not match');
+      await register(email.trim(), u, passcode);
     } else {
-      await login(email, passcode);
+      if (!emailOrUsername.trim()) return setLocalError('Enter your email or username');
+      await login(emailOrUsername.trim(), passcode);
     }
   };
 
@@ -46,17 +57,48 @@ export function UnlockScreen() {
         </div>
 
         <form onSubmit={handleSubmit} className="w-full space-y-4">
-          <div className="relative group">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary group-focus-within:text-white transition-colors" />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              className="void-input w-full py-2.5 pl-10 text-sm"
-              required
-            />
-          </div>
+          {mode === 'register' ? (
+            <>
+              <div className="relative group">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary group-focus-within:text-white transition-colors" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email"
+                  className="void-input w-full py-2.5 pl-10 text-sm"
+                  required
+                />
+              </div>
+              <div className="relative group">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary group-focus-within:text-white transition-colors" />
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Username"
+                  className="void-input w-full py-2.5 pl-10 text-sm"
+                  required
+                  minLength={USERNAME_MIN}
+                  maxLength={USERNAME_MAX}
+                  autoComplete="username"
+                />
+              </div>
+            </>
+          ) : (
+            <div className="relative group">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary group-focus-within:text-white transition-colors" />
+              <input
+                type="text"
+                value={emailOrUsername}
+                onChange={(e) => setEmailOrUsername(e.target.value)}
+                placeholder="Email or username"
+                className="void-input w-full py-2.5 pl-10 text-sm"
+                required
+                autoComplete="username"
+              />
+            </div>
+          )}
 
           <div className="relative group">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary group-focus-within:text-white transition-colors" />
@@ -136,7 +178,7 @@ export function UnlockScreen() {
         </form>
 
         <button 
-            onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setLocalError(null); }}
+            onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setLocalError(null); setEmail(''); setUsername(''); setEmailOrUsername(''); }}
             className="mt-6 text-xs text-secondary hover:text-white transition-colors"
         >
             {mode === 'login' ? "Create an account" : "Log in to existing account"}

@@ -6,6 +6,7 @@ import { deriveKey, decryptVault, encryptVault, generateSalt, arrayBufferToBase6
 
 interface User {
   email: string;
+  username?: string;
 }
 
 interface VaultContextType {
@@ -14,9 +15,9 @@ interface VaultContextType {
   isLoading: boolean;
   error: string | null;
   vaultData: PlaintextVault | null;
-  isSetupMode: boolean; 
-  login: (email: string, passcode: string) => Promise<boolean>;
-  register: (email: string, passcode: string) => Promise<boolean>;
+  isSetupMode: boolean;
+  login: (emailOrUsername: string, passcode: string) => Promise<boolean>;
+  register: (email: string, username: string, passcode: string) => Promise<boolean>;
   lock: () => void;
   logout: () => Promise<void>;
   saveVault: (newData: PlaintextVault) => Promise<void>;
@@ -38,27 +39,73 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   const saltRef = useRef<string | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
 
-  // Check session on load
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const res = await fetch('/api/vault');
-        if (res.ok) {
-          const data = await res.json();
-          // We are logged in but vault is still locked
-          setIsUnlocked(false);
-          setIsSetupMode(false);
-        } else if (res.status === 404) {
-          // Logged in but no vault exists yet
+  const clearSessionState = useCallback(() => {
+    setUser(null);
+    setIsUnlocked(false);
+    setIsSetupMode(false);
+    setVaultData(null);
+    keyRef.current = null;
+    saltRef.current = null;
+  }, []);
+
+  const checkSession = useCallback(async (): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/auth/session', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setUser({ email: data.email, username: data.username });
+        setIsUnlocked(false);
+        setIsSetupMode(false);
+        const vaultRes = await fetch('/api/vault', { credentials: 'include' });
+        if (vaultRes.ok) {
+          // Has vault; stay locked until passcode
+        } else if (vaultRes.status === 401) {
+          clearSessionState();
+        } else if (vaultRes.status === 404) {
           setIsSetupMode(true);
         }
-      } catch (e) {
-        // Not logged in or network error
-      } finally {
-        setIsLoading(false);
+        return true;
+      }
+      if (res.status === 401) clearSessionState();
+      return false;
+    } catch {
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [clearSessionState]);
+
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
+
+  useEffect(() => {
+    if (!isUnlocked) return;
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetch('/api/auth/session', { credentials: 'include' })
+          .then((res) => { if (res.status === 401) clearSessionState(); });
       }
     };
-    checkSession();
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [isUnlocked, clearSessionState]);
+
+  const lock = () => {
+    setIsUnlocked(false);
+    setVaultData(null);
+    keyRef.current = null;
+  };
+
+  const logout = useCallback(async () => {
+    lock();
+    setUser(null);
+    setIsSetupMode(false);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch {
+      // Offline or server error: local state already cleared
+    }
   }, []);
 
   // Auto-lock logic
@@ -78,7 +125,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener('keydown', resetTimer);
       clearInterval(interval);
     };
-  }, [isUnlocked]);
+  }, [isUnlocked, logout]);
 
   /**
    * Derives two keys: 
@@ -102,7 +149,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     return { keyVault, keyAuthB64 };
   };
 
-  const register = async (email: string, passcode: string) => {
+  const register = async (email: string, username: string, passcode: string) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -113,7 +160,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, authSalt: saltB64, keyAuth: keyAuthB64 })
+        body: JSON.stringify({ email, username: username.trim(), authSalt: saltB64, keyAuth: keyAuthB64 })
       });
 
       if (!res.ok) {
@@ -121,7 +168,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
         throw new Error(data.error || 'Registration failed');
       }
 
-      setUser({ email });
+      const data = await res.json();
+      setUser({ email: data.email, username: data.username });
       keyRef.current = keyVault;
       saltRef.current = saltB64;
       
@@ -142,36 +190,37 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const login = async (email: string, passcode: string) => {
+  const login = async (emailOrUsername: string, passcode: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      // 1. Get user's salt
+      const identifier = emailOrUsername.trim();
+      if (!identifier) throw new Error('Enter your email or username');
+
       const saltRes = await fetch('/api/auth/salt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ emailOrUsername: identifier })
       });
-      if (!saltRes.ok) throw new Error('Invalid email or passcode');
+      if (!saltRes.ok) throw new Error('Invalid email, username or passcode');
       const { salt: saltB64 } = await saltRes.json();
       const salt = new Uint8Array(base64ToArrayBuffer(saltB64));
 
-      // 2. Derive keys
       const { keyVault, keyAuthB64 } = await deriveDualKeys(passcode, salt);
 
-      // 3. Login to server
       const loginRes = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, keyAuth: keyAuthB64 })
+        body: JSON.stringify({ emailOrUsername: identifier, keyAuth: keyAuthB64 })
       });
-      
+
       if (!loginRes.ok) {
         const errorData = await loginRes.json();
-        throw new Error(errorData.error || 'Invalid email or passcode');
+        throw new Error(errorData.error || 'Invalid email, username or passcode');
       }
 
-      setUser({ email });
+      const loginData = await loginRes.json();
+      setUser({ email: loginData.email, username: loginData.username });
       keyRef.current = keyVault;
       saltRef.current = saltB64;
 
@@ -201,21 +250,6 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const lock = () => {
-    setIsUnlocked(false);
-    setVaultData(null);
-    keyRef.current = null;
-    // Note: we keep 'user' logged in at the session level, 
-    // just the vault is locked in UI.
-  };
-
-  const logout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    lock();
-    setUser(null);
-    setIsSetupMode(false);
-  };
-
   const saveVault = async (newData: PlaintextVault) => {
     if (!keyRef.current || !saltRef.current) throw new Error('Vault locked');
     setVaultData(newData);
@@ -223,9 +257,15 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     const res = await fetch('/api/vault', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ vault: envelope })
+      body: JSON.stringify({ vault: envelope }),
+      credentials: 'include',
     });
 
+    if (res.status === 401) {
+      clearSessionState();
+      setError('Session expired or active on another device. Please sign in again.');
+      throw new Error('Session expired');
+    }
     if (!res.ok) {
       throw new Error('Failed to save vault');
     }

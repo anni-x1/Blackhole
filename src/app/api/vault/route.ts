@@ -1,27 +1,10 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Vault from '@/models/Vault';
-import User from '@/models/User';
 import { getSession } from '@/lib/session';
+import { validateAndRefreshSession } from '@/lib/session-validate';
 import { rateLimit } from '@/lib/rate-limit';
 import { headers } from 'next/headers';
-
-async function validateAndRefreshSession(session: any) {
-  if (!session.isLoggedIn || !session.userId) return null;
-  
-  await connectDB();
-  const user = await User.findById(session.userId);
-  
-  // @ts-ignore
-  if (!user || user.activeSessionId !== session.sessionId) {
-    return null;
-  }
-
-  // Update last seen to keep the session alive
-  user.lastActiveAt = new Date();
-  await user.save();
-  return user;
-}
 
 export async function GET() {
   const session = await getSession();

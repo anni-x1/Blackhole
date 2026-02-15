@@ -17,16 +17,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Too many login attempts. Please try again later.' }, { status: 429 });
     }
 
-    const { email, keyAuth } = await request.json();
+    const { emailOrUsername, keyAuth } = await request.json();
 
-    if (typeof email !== 'string' || typeof keyAuth !== 'string') {
+    if (typeof emailOrUsername !== 'string' || typeof keyAuth !== 'string') {
+      return NextResponse.json({ error: 'Invalid input types' }, { status: 400 });
+    }
+
+    const identifier = emailOrUsername.trim();
+    if (!identifier) {
       return NextResponse.json({ error: 'Invalid input types' }, { status: 400 });
     }
 
     await connectDB();
 
-    console.log('Login attempt for:', email);
-    const user = await User.findOne({ email });
+    const isEmail = identifier.includes('@');
+    const user = isEmail
+      ? await User.findOne({ email: identifier.toLowerCase() })
+      : await User.findOne({ username: identifier.toLowerCase() });
 
     if (!user) {
       // TIMING ATTACK PREVENTION:
@@ -35,7 +42,7 @@ export async function POST(request: Request) {
       const dummyHash = '$2b$12$v017k6mGKW7JsASF3FImuuIDk5T6Ud5hmZmPISLllbxQJCqILHTuG'; // Valid bcrypt hash
       await bcrypt.compare(keyAuth, dummyHash);
       
-      console.log('User not found in login (timing safe):', email);
+      console.log('User not found in login (timing safe)');
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
@@ -43,7 +50,7 @@ export async function POST(request: Request) {
     const isValid = await bcrypt.compare(keyAuth, user.passwordHash);
 
     if (!isValid) {
-      console.log('Password verification failed for:', email);
+      console.log('Password verification failed');
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
@@ -66,22 +73,21 @@ export async function POST(request: Request) {
     // Generate a unique ID for this specific session
     const newSessionId = crypto.randomUUID();
 
-    console.log('Login successful for:', email);
+    console.log('Login successful for:', user.email);
     const session = await getSession();
-    
-    // Update user with new session info
+
     user.activeSessionId = newSessionId;
     user.lastActiveAt = new Date();
     await user.save();
 
     session.userId = user._id.toString();
     session.email = user.email;
+    session.username = user.username;
     session.isLoggedIn = true;
-    // @ts-expect-error - adding custom field to session
     session.sessionId = newSessionId;
     await session.save();
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, email: user.email, username: user.username });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

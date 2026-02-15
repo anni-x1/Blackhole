@@ -5,27 +5,31 @@ import crypto from 'crypto';
 
 export async function POST(request: Request) {
   try {
-    const { email } = await request.json();
+    const { emailOrUsername } = await request.json();
 
-    if (typeof email !== 'string') {
-        return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+    if (typeof emailOrUsername !== 'string') {
+      return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
     }
-    
+
+    const identifier = emailOrUsername.trim();
+    if (!identifier) {
+      return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+    }
+
     await connectDB();
-    
-    const user = await User.findOne({ email }).select('authSalt');
+
+    const isEmail = identifier.includes('@');
+    const user = isEmail
+      ? await User.findOne({ email: identifier.toLowerCase() }).select('authSalt')
+      : await User.findOne({ username: identifier.toLowerCase() }).select('authSalt');
 
     if (!user) {
-      // Generate a deterministic fake salt based on the email
-      // This ensures the "fake" salt is consistent for the same email
-      // but useless for actual decryption.
       const fakeSalt = crypto
         .createHmac('sha256', process.env.SESSION_PASSWORD || 'fallback_secret')
-        .update(email)
+        .update(identifier)
         .digest()
         .subarray(0, 16)
         .toString('base64');
-
       return NextResponse.json({ salt: fakeSalt });
     }
 

@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 export interface SessionData {
   userId?: string;
   email?: string;
+  username?: string;
+  sessionId?: string;
   isLoggedIn: boolean;
 }
 
@@ -17,6 +19,9 @@ export const sessionOptions: SessionOptions = {
   ttl: 0,
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax' as const,
+    path: '/',
   },
 };
 
