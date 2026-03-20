@@ -69,6 +69,17 @@ export function DataTransferModal({ isOpen, onClose }: DataTransferModalProps) {
       setIsWorking(true);
       setError(null);
       setMessage(null);
+
+      if (mode === 'replace') {
+        const confirmed = window.confirm(
+          'WARNING: This will PERMANENTLY delete all current passwords and API keys in this vault and replace them with the imported data. This action cannot be undone.\n\nAre you sure you want to proceed?'
+        );
+        if (!confirmed) {
+          setIsWorking(false);
+          return;
+        }
+      }
+
       const text = await file.text();
 
       const importedVault = file.name.toLowerCase().endsWith('.csv')
@@ -126,13 +137,15 @@ export function DataTransferModal({ isOpen, onClose }: DataTransferModalProps) {
             <div className="mt-5 space-y-3">
               <button
                 onClick={handleExportJson}
-                className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left transition-colors hover:bg-white/10"
+                className="flex w-full items-center justify-between rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-left transition-colors hover:bg-red-500/10"
               >
                 <div>
                   <p className="text-sm font-medium text-white">Plain JSON Export</p>
-                  <p className="mt-1 text-xs text-secondary">Best for migrations and inspection.</p>
+                  <p className="mt-1 text-xs text-red-400 font-medium flex items-center gap-1">
+                    <span className="text-[10px]">⚠️</span> UNENCRYPTED - Handle with care
+                  </p>
                 </div>
-                <FileJson className="h-4 w-4 text-secondary" />
+                <FileJson className="h-4 w-4 text-red-400/60" />
               </button>
 
               <button
@@ -167,7 +180,9 @@ export function DataTransferModal({ isOpen, onClose }: DataTransferModalProps) {
               </button>
               <button
                 onClick={() => setMode('replace')}
-                className={`flex-1 rounded-lg px-3 py-2 text-xs transition-colors ${mode === 'replace' ? 'bg-white text-black' : 'text-secondary hover:text-white'}`}
+                className={`flex-1 rounded-lg px-3 py-2 text-xs transition-colors ${
+                  mode === 'replace' ? 'bg-red-600 text-white shadow-lg shadow-red-900/20' : 'text-secondary hover:text-white'
+                }`}
               >
                 Replace
               </button>
