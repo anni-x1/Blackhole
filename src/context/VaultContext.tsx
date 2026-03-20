@@ -1,8 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
-import { PlaintextVault, VaultEntry, VaultEnvelope } from '../types/vault';
+import { PlaintextVault, VaultEnvelope } from '../types/vault';
 import { deriveKey, decryptVault, encryptVault, generateSalt, arrayBufferToBase64, base64ToArrayBuffer } from '../lib/crypto';
+import type { EncryptedVaultExport } from '@/lib/vault-transfer';
 
 interface User {
   email: string;
@@ -21,6 +22,7 @@ interface VaultContextType {
   lock: () => void;
   logout: () => Promise<void>;
   saveVault: (newData: PlaintextVault) => Promise<void>;
+  exportEncryptedVault: () => Promise<EncryptedVaultExport>;
 }
 
 const VaultContext = createContext<VaultContextType | undefined>(undefined);
@@ -271,10 +273,25 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const exportEncryptedVault = async (): Promise<EncryptedVaultExport> => {
+    if (!keyRef.current || !saltRef.current || !vaultData) {
+      throw new Error('Vault locked');
+    }
+
+    const envelope: VaultEnvelope = await encryptVault(keyRef.current, vaultData, saltRef.current);
+
+    return {
+      format: 'blackhole-vault-backup',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      vault: envelope,
+    };
+  };
+
   return (
     <VaultContext.Provider value={{
       user, isUnlocked, isLoading, error, vaultData, isSetupMode,
-      login, register, lock, logout, saveVault
+      login, register, lock, logout, saveVault, exportEncryptedVault
     }}>
       {children}
     </VaultContext.Provider>

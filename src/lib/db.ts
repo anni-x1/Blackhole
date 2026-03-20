@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { type ConnectOptions } from 'mongoose';
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -26,7 +26,7 @@ async function connectDB() {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(DATABASE_URL!, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(DATABASE_URL!, opts as any).then((mongoose) => {
       return mongoose;
     });
   }

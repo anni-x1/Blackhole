@@ -4,17 +4,20 @@ import { useVault } from '@/context/VaultContext';
 import { PasswordsList } from './PasswordsList';
 import { ApisList } from './ApisList';
 import { Playground } from './Playground';
-import { LogOut, Plus, Search } from 'lucide-react';
+import { PasswordHealth } from './PasswordHealth';
+import { DataTransferModal } from './DataTransferModal';
+import { Download, LogOut, Plus, Search, ShieldCheck } from 'lucide-react';
 import { AddEditModal } from './AddEditModal';
 import { motion } from 'framer-motion';
 import { Logo } from '@/components/ui/Logo';
 
-type Tab = 'passwords' | 'apis' | 'playground';
+type Tab = 'passwords' | 'apis' | 'playground' | 'health';
 
 export function VaultDashboard() {
   const { logout, user } = useVault();
   const [activeTab, setActiveTab] = useState<Tab>('passwords');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
@@ -29,6 +32,13 @@ export function VaultDashboard() {
         </div>
 
         <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsTransferModalOpen(true)}
+              className="void-button-secondary flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-secondary hover:text-white transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Transfer
+            </button>
             <button onClick={logout} className="void-button-secondary p-2 rounded-lg text-secondary hover:text-white transition-colors">
                 <LogOut className="w-4 h-4" />
             </button>
@@ -37,7 +47,7 @@ export function VaultDashboard() {
 
       <div className="flex flex-col md:flex-row gap-6 mb-8 items-start md:items-center justify-between">
          <nav className="flex gap-1 p-1 bg-[#111] rounded-lg border border-white/5">
-            {(['passwords', 'apis', 'playground'] as const).map((tab) => (
+            {(['passwords', 'apis', 'playground', 'health'] as const).map((tab) => (
             <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -47,7 +57,10 @@ export function VaultDashboard() {
                     : 'text-secondary hover:text-white'
                 }`}
             >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                <span className="inline-flex items-center gap-1.5">
+                  {tab === 'health' && <ShieldCheck className="w-3.5 h-3.5" />}
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </span>
             </button>
             ))}
         </nav>
@@ -57,16 +70,17 @@ export function VaultDashboard() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-secondary" />
                 <input 
                     type="text" 
-                    placeholder="Search..." 
+                    placeholder={activeTab === 'health' ? 'Search passwords tab instead...' : 'Search...'} 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="void-input w-full pl-9 py-1.5 text-xs bg-[#0a0a0a]"
+                    disabled={activeTab === 'health' || activeTab === 'playground'}
                 />
             </div>
             <button 
                 onClick={() => setIsAddModalOpen(true)}
                 className="void-button px-3 py-1.5 text-xs flex items-center gap-2 whitespace-nowrap"
-                disabled={activeTab === 'playground'}
+                disabled={activeTab === 'playground' || activeTab === 'health'}
             >
                 <Plus className="w-3.5 h-3.5" /> New Entry
             </button>
@@ -81,13 +95,21 @@ export function VaultDashboard() {
         {activeTab === 'passwords' && <PasswordsList search={searchQuery} />}
         {activeTab === 'apis' && <ApisList search={searchQuery} />}
         {activeTab === 'playground' && <Playground />}
+        {activeTab === 'health' && <PasswordHealth />}
       </motion.main>
 
-      {isAddModalOpen && activeTab !== 'playground' && (
+      {isAddModalOpen && activeTab !== 'playground' && activeTab !== 'health' && (
         <AddEditModal 
           type={activeTab === 'apis' ? 'api' : 'password'} 
           isOpen={isAddModalOpen} 
           onClose={() => setIsAddModalOpen(false)} 
+        />
+      )}
+
+      {isTransferModalOpen && (
+        <DataTransferModal
+          isOpen={isTransferModalOpen}
+          onClose={() => setIsTransferModalOpen(false)}
         />
       )}
     </div>

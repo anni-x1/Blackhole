@@ -2,11 +2,11 @@ import { afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
 // Polyfills
-import { TextEncoder, TextDecoder } from 'util';
+import { TextEncoder, TextDecoder } from 'node:util';
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder as any;
 
-import { webcrypto } from 'crypto';
+import { webcrypto } from 'node:crypto';
 if (!global.crypto) {
     global.crypto = webcrypto as any;
 }

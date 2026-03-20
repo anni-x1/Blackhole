@@ -1,7 +1,7 @@
 'use client';
 import { useVault } from '@/context/VaultContext';
 import { VaultEntry } from '@/types/vault';
-import { X, RefreshCw, Plus, Trash, Zap } from 'lucide-react';
+import { X, Plus, Trash, Zap } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { generateUUID } from '@/lib/crypto';
 

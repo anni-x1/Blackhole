@@ -12,6 +12,12 @@ Blackhole Vault is a secure, client-side encrypted password manager and vault bu
     - Securely store **API Keys** and notes.
     - **Drag & Drop Reordering:** Organize your passwords and API keys by simply dragging them into your preferred order.
     - **Playground:** An encrypted scratchpad for sensitive temporary text.
+- **Vault Data Portability:**
+    - **Export:** Securely export your entire vault as a plaintext JSON file or an encrypted backup (.json format).
+    - **Import:** Easily import vault data from previous exports to restore your passwords and API keys.
+- **Password Security Audit:**
+    - **Health Check:** Real-time analysis of your passwords to identify weak, common, or reused credentials.
+    - **Strength Meter:** visual feedback on password complexity during creation and editing.
 - **Enhanced Privacy & UX:**
     - **Username Support:** Register and log in using either your email or a unique username.
     - **Single-Session Enforcement:** Robust session management ensures your account is active on only one device at a time, preventing session conflicts.
