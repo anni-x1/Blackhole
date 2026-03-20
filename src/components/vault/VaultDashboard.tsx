@@ -8,7 +8,7 @@ import { PasswordHealth } from './PasswordHealth';
 import { DataTransferModal } from './DataTransferModal';
 import { Download, LogOut, Plus, Search, ShieldCheck } from 'lucide-react';
 import { AddEditModal } from './AddEditModal';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '@/components/ui/Logo';
 
 type Tab = 'passwords' | 'apis' | 'playground' | 'health';
@@ -23,13 +23,31 @@ export function VaultDashboard() {
   return (
     <div className="max-w-5xl mx-auto px-6 py-12">
       <header className="flex items-center justify-between mb-12">
-        <div className="flex items-center gap-4">
-          <Logo className="w-10 h-10" />
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="flex items-center gap-4"
+        >
+          <motion.div 
+            animate={{ 
+              rotate: [0, 5, -5, 0],
+              scale: [1, 1.05, 0.95, 1]
+            }}
+            transition={{ 
+              duration: 6, 
+              repeat: Infinity,
+              ease: "easeInOut" 
+            }}
+            className="relative"
+          >
+            <div className="absolute inset-0 bg-blue-500/10 blur-xl rounded-full" />
+            <Logo className="w-10 h-10 relative" />
+          </motion.div>
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-white">Blackhole</h1>
             <p className="text-xs text-secondary font-mono">{user?.email}</p>
           </div>
-        </div>
+        </motion.div>
 
         <div className="flex items-center gap-3">
             <button
@@ -87,16 +105,22 @@ export function VaultDashboard() {
         </div>
       </div>
 
-      <motion.main 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-      >
-        {activeTab === 'passwords' && <PasswordsList search={searchQuery} />}
-        {activeTab === 'apis' && <ApisList search={searchQuery} />}
-        {activeTab === 'playground' && <Playground />}
-        {activeTab === 'health' && <PasswordHealth />}
-      </motion.main>
+      <div className="min-h-[400px]">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {activeTab === 'passwords' && <PasswordsList search={searchQuery} />}
+            {activeTab === 'apis' && <ApisList search={searchQuery} />}
+            {activeTab === 'playground' && <Playground />}
+            {activeTab === 'health' && <PasswordHealth />}
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
       {isAddModalOpen && activeTab !== 'playground' && activeTab !== 'health' && (
         <AddEditModal 

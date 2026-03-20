@@ -5,7 +5,8 @@ import { Copy, Eye, EyeOff, Trash2, Edit2, Check, Shield, GripVertical } from 'l
 import { useState, useEffect } from 'react';
 import { AddEditModal } from './AddEditModal';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
-import { Reorder, useDragControls, DragControls } from 'framer-motion';
+import { Reorder, useDragControls, DragControls, motion, AnimatePresence } from 'framer-motion';
+import { ClipboardCopyButton } from '../ui/ClipboardCopyButton';
 
 export function PasswordsList({ search }: { search: string }) {
   const { vaultData, saveVault } = useVault();
@@ -42,33 +43,49 @@ export function PasswordsList({ search }: { search: string }) {
   return (
     <div className="space-y-3 pb-20">
       {filteredEntries.length === 0 ? (
-        <div className="text-center py-20 border border-dashed border-white/10 rounded-xl">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-20 border border-dashed border-white/10 rounded-xl"
+        >
           <Shield className="w-8 h-8 mx-auto mb-3 text-secondary opacity-50" />
           <p className="text-sm text-secondary">No passwords stored</p>
-        </div>
+        </motion.div>
       ) : (
         isReorderEnabled ? (
           <Reorder.Group axis="y" values={items} onReorder={handleReorder} className="grid gap-2">
-            {items.map(entry => (
-              <DraggablePasswordItem 
-                key={entry.id} 
-                entry={entry} 
-                onEdit={() => setEditingEntry(entry)} 
-                onDelete={() => setDeletingEntry(entry)} 
-              />
-            ))}
+            <AnimatePresence mode="popLayout">
+              {items.map((entry, index) => (
+                <DraggablePasswordItem 
+                  key={entry.id} 
+                  entry={entry} 
+                  index={index}
+                  onEdit={() => setEditingEntry(entry)} 
+                  onDelete={() => setDeletingEntry(entry)} 
+                />
+              ))}
+            </AnimatePresence>
           </Reorder.Group>
         ) : (
           <div className="grid gap-2">
-             {filteredEntries.map(entry => (
-               <PasswordRow 
-                 key={entry.id} 
-                 entry={entry} 
-                 onEdit={() => setEditingEntry(entry)}
-                 onDelete={() => setDeletingEntry(entry)}
-                 dragControls={null}
-               />
-             ))}
+            <AnimatePresence mode="popLayout">
+              {filteredEntries.map((entry, index) => (
+                <motion.div
+                  key={entry.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ delay: index * 0.03 }}
+                >
+                  <PasswordRow 
+                    entry={entry} 
+                    onEdit={() => setEditingEntry(entry)}
+                    onDelete={() => setDeletingEntry(entry)}
+                    dragControls={null}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )
       )}
@@ -94,11 +111,19 @@ export function PasswordsList({ search }: { search: string }) {
   );
 }
 
-function DraggablePasswordItem({ entry, onEdit, onDelete }: { entry: VaultEntry, onEdit: () => void, onDelete: () => void }) {
+function DraggablePasswordItem({ entry, onEdit, onDelete, index }: { entry: VaultEntry, onEdit: () => void, onDelete: () => void, index: number }) {
   const dragControls = useDragControls();
   
   return (
-    <Reorder.Item value={entry} dragListener={false} dragControls={dragControls}>
+    <Reorder.Item 
+      value={entry} 
+      dragListener={false} 
+      dragControls={dragControls}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.2, delay: index * 0.03 }}
+    >
       <PasswordRow 
         entry={entry} 
         onEdit={onEdit} 
@@ -111,21 +136,9 @@ function DraggablePasswordItem({ entry, onEdit, onDelete }: { entry: VaultEntry,
 
 function PasswordRow({ entry, onEdit, onDelete, dragControls }: { entry: VaultEntry, onEdit: () => void, onDelete: () => void, dragControls: DragControls | null }) {
   const [isRevealed, setIsRevealed] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    if (!entry.password) return;
-    await navigator.clipboard.writeText(entry.password);
-    setCopied(true);
-    setTimeout(() => {
-        navigator.clipboard.writeText(''); 
-        setCopied(false);
-    }, 15000);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   return (
-    <div className="group bg-[#0a0a0a] border border-white/5 hover:border-white/10 p-4 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all select-none">
+    <div className="group bg-[#0a0a0a] border border-white/5 hover:border-white/10 p-4 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all select-none hover:shadow-[0_0_20px_rgba(255,255,255,0.02)]">
       <div className="flex items-center gap-3 flex-1 min-w-0">
         {dragControls && (
             <div 
@@ -153,9 +166,7 @@ function PasswordRow({ entry, onEdit, onDelete, dragControls }: { entry: VaultEn
                 {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             </button>
 
-            <button onClick={handleCopy} className="p-1.5 hover:bg-white/10 rounded text-secondary hover:text-green-400 transition-colors">
-                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
+            <ClipboardCopyButton value={entry.password} />
 
             <div className="w-px h-3 bg-white/10 mx-1" />
 
