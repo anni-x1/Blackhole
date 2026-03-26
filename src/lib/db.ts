@@ -1,4 +1,4 @@
-import mongoose, { type ConnectOptions } from 'mongoose';
+import mongoose from 'mongoose';
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -10,35 +10,46 @@ if (!DATABASE_URL) {
  * Global is used here to maintain a cached connection across hot reloads
  * in development. This prevents connections growing exponentially.
  */
-let cached = (global as any).mongoose;
-
-if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
 }
 
+declare global {
+  var mongoose: MongooseCache | undefined;
+}
+
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+const mongooseCache = cached;
+
 async function connectDB() {
-  if (cached.conn) {
-    return cached.conn;
+  if (mongooseCache.conn) {
+    return mongooseCache.conn;
   }
 
-  if (!cached.promise) {
+  if (!mongooseCache.promise) {
     const opts = {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(DATABASE_URL!, opts as any).then((mongoose) => {
-      return mongoose;
+    mongooseCache.promise = mongoose.connect(DATABASE_URL!, opts).then((mongooseInstance) => {
+      return mongooseInstance;
     });
   }
 
   try {
-    cached.conn = await cached.promise;
+    mongooseCache.conn = await mongooseCache.promise;
   } catch (e) {
-    cached.promise = null;
+    mongooseCache.promise = null;
     throw e;
   }
 
-  return cached.conn;
+  return mongooseCache.conn;
 }
 
 export default connectDB;

@@ -1,8 +1,8 @@
 'use client';
 import { useVault } from '@/context/VaultContext';
 import { VaultEntry } from '@/types/vault';
-import { Copy, Eye, EyeOff, Trash2, Edit2, Check, Code, GripVertical } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Eye, EyeOff, Trash2, Edit2, Code, GripVertical } from 'lucide-react';
+import { useState } from 'react';
 import { AddEditModal } from './AddEditModal';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { Reorder, useDragControls, DragControls, motion, AnimatePresence } from 'framer-motion';
@@ -14,14 +14,13 @@ export function ApisList({ search }: { search: string }) {
   const [deletingEntry, setDeletingEntry] = useState<VaultEntry | null>(null);
 
   // Local state for immediate UI feedback during drag
-  const [items, setItems] = useState<VaultEntry[]>([]);
+  const [items, setItems] = useState<VaultEntry[]>(vaultData?.apis || []);
+  const [prevApis, setPrevApis] = useState(vaultData?.apis);
 
-  // Sync local items with vaultData when not dragging/searching
-  useEffect(() => {
-    if (vaultData?.apis) {
-      setItems(vaultData.apis);
-    }
-  }, [vaultData?.apis]);
+  if (vaultData?.apis !== prevApis) {
+    setPrevApis(vaultData?.apis);
+    setItems(vaultData?.apis || []);
+  }
 
   const filteredEntries = items.filter(p => 
     p.service.toLowerCase().includes(search.toLowerCase())

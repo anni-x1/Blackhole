@@ -1,18 +1,18 @@
 'use client';
 import { useVault } from '@/context/VaultContext';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Save, Lock, FileText } from 'lucide-react';
 
 export function Playground() {
   const { vaultData, saveVault } = useVault();
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState(vaultData?.playground?.scratch || '');
+  const [prevScratch, setPrevScratch] = useState(vaultData?.playground?.scratch);
   const [isDirty, setIsDirty] = useState(false);
 
-  useEffect(() => {
-    if (vaultData) {
-        setContent(vaultData.playground?.scratch || '');
-    }
-  }, [vaultData]);
+  if (vaultData?.playground?.scratch !== prevScratch) {
+    setPrevScratch(vaultData?.playground?.scratch);
+    setContent(vaultData?.playground?.scratch || '');
+  }
 
   const handleSave = async () => {
     if (!vaultData) return;

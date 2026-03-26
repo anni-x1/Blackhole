@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
 import Vault from '@/models/Vault';
 import { getSession } from '@/lib/session';
 import { validateAndRefreshSession } from '@/lib/session-validate';
@@ -21,7 +20,8 @@ export async function GET() {
     }
 
     return NextResponse.json({ vault });
-  } catch (e) {
+  } catch (err) {
+    console.error('Vault fetch error:', err);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 }
@@ -81,8 +81,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ ok: true });
-  } catch (e) {
-    console.error('Vault save error:', e);
+  } catch (err) {
+    console.error('Vault save error:', err);
     return NextResponse.json({ error: 'Failed to save' }, { status: 500 });
   }
 }

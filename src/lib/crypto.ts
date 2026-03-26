@@ -68,6 +68,7 @@ export async function deriveKey(
   return crypto.deriveKey(
     {
       name: 'PBKDF2',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       salt: salt as any,
       iterations: PBKDF2_ITERATIONS,
       hash: HASH_ALGO,

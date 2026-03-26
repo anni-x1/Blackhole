@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 // Username: 3–30 chars, alphanumeric + underscore + hyphen. Stored lowercase.
 export const USERNAME_MIN_LEN = 3;

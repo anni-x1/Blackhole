@@ -1,8 +1,8 @@
 'use client';
 import { useVault } from '@/context/VaultContext';
 import { VaultEntry } from '@/types/vault';
-import { Copy, Eye, EyeOff, Trash2, Edit2, Check, Shield, GripVertical } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Eye, EyeOff, Trash2, Edit2, Shield, GripVertical } from 'lucide-react';
+import { useState } from 'react';
 import { AddEditModal } from './AddEditModal';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { Reorder, useDragControls, DragControls, motion, AnimatePresence } from 'framer-motion';
@@ -14,14 +14,13 @@ export function PasswordsList({ search }: { search: string }) {
   const [deletingEntry, setDeletingEntry] = useState<VaultEntry | null>(null);
   
   // Local state for immediate UI feedback during drag
-  const [items, setItems] = useState<VaultEntry[]>([]);
+  const [items, setItems] = useState<VaultEntry[]>(vaultData?.passwords || []);
+  const [prevPasswords, setPrevPasswords] = useState(vaultData?.passwords);
 
-  // Sync local items with vaultData when not dragging/searching
-  useEffect(() => {
-    if (vaultData?.passwords) {
-      setItems(vaultData.passwords);
-    }
-  }, [vaultData?.passwords]);
+  if (vaultData?.passwords !== prevPasswords) {
+    setPrevPasswords(vaultData?.passwords);
+    setItems(vaultData?.passwords || []);
+  }
 
   const filteredEntries = items.filter(p => 
     p.service.toLowerCase().includes(search.toLowerCase()) || 

@@ -2,7 +2,7 @@
 import { useVault } from '@/context/VaultContext';
 import { VaultEntry } from '@/types/vault';
 import { X, Plus, Trash, Zap } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { generateUUID } from '@/lib/crypto';
 
 interface AddEditModalProps {
@@ -15,30 +15,14 @@ interface AddEditModalProps {
 export function AddEditModal({ type, entry, isOpen, onClose }: AddEditModalProps) {
   const { vaultData, saveVault } = useVault();
   
-  const [service, setService] = useState('');
-  const [username, setUsername] = useState('');
-  const [secret, setSecret] = useState('');
-  const [remarks, setRemarks] = useState('');
-  const [custom, setCustom] = useState<{key: string, value: string}[]>([]);
+  const [service, setService] = useState(entry?.service || '');
+  const [username, setUsername] = useState(entry?.username || '');
+  const [secret, setSecret] = useState(type === 'password' ? entry?.password || '' : entry?.apikey || '');
+  const [remarks, setRemarks] = useState(entry?.remarks || '');
+  const [custom, setCustom] = useState<{key: string, value: string}[]>(
+    entry?.custom ? Object.entries(entry.custom).map(([k, v]) => ({ key: k, value: v })) : []
+  );
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (entry) {
-      setService(entry.service);
-      setUsername(entry.username || '');
-      setSecret(type === 'password' ? entry.password || '' : entry.apikey || '');
-      setRemarks(entry.remarks || '');
-      if (entry.custom) {
-        setCustom(Object.entries(entry.custom).map(([k, v]) => ({ key: k, value: v })));
-      }
-    } else {
-      setService('');
-      setUsername('');
-      setSecret('');
-      setRemarks('');
-      setCustom([]);
-    }
-  }, [entry, type, isOpen]);
 
   if (!isOpen) return null;
 
@@ -101,7 +85,7 @@ export function AddEditModal({ type, entry, isOpen, onClose }: AddEditModalProps
     try {
       await saveVault(newVault);
       onClose();
-    } catch (e) {
+    } catch {
       setError('Failed to save');
     }
   };

@@ -157,17 +157,17 @@ export function parseCsvImport(csv: string): PlaintextVault {
 }
 
 export function parseJsonImport(json: string): PlaintextVault {
-  const parsed = JSON.parse(json) as Partial<PlainVaultExport & EncryptedVaultExport> | PlaintextVault;
+  const parsed = JSON.parse(json) as Record<string, unknown>;
 
-  if ((parsed as any).format === 'blackhole-vault-json') {
-    return normalizePlaintextVault((parsed as any).vault);
+  if (parsed.format === 'blackhole-vault-json') {
+    return normalizePlaintextVault(parsed.vault as PlaintextVault);
   }
 
-  if ((parsed as any).format === 'blackhole-vault-backup') {
+  if (parsed.format === 'blackhole-vault-backup') {
     throw new Error('Encrypted backup imports are not supported yet. Export one as plain JSON to re-import it.');
   }
 
-  return normalizePlaintextVault(parsed);
+  return normalizePlaintextVault(parsed as unknown as PlaintextVault);
 }
 
 export function mergeVaults(currentVault: PlaintextVault, importedVault: PlaintextVault): PlaintextVault {

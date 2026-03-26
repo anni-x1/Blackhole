@@ -20,7 +20,14 @@ export function StarsBackground() {
     
     // State
     const stars: {x: number, y: number, size: number, opacity: number, speed: number}[] = [];
-    const meteors: {x: number, y: number, length: number, speed: number, angle: number}[] = [];
+    interface Meteor {
+      x: number;
+      y: number;
+      length: number;
+      speed: number;
+      angle: number;
+    }
+    const meteors: Meteor[] = [];
 
     // Initialize
     const resize = () => {
@@ -44,7 +51,7 @@ export function StarsBackground() {
     }
 
     // Create Meteors (Reset)
-    const resetMeteor = (m: any) => {
+    const resetMeteor = (m: Meteor) => {
       m.x = Math.random() * width * 1.5 - width * 0.5;
       m.y = -100;
       m.length = Math.random() * 80 + 20;

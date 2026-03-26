@@ -184,8 +184,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
       setIsUnlocked(true);
       setIsSetupMode(false);
       return true;
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Registration failed');
       return false;
     } finally {
       setIsLoading(false);
@@ -244,8 +244,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
       }
       
       return true;
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Registration failed');
       return false;
     } finally {
       setIsLoading(false);

@@ -90,12 +90,13 @@ export async function POST(request: Request) {
     await session.save();
 
     return NextResponse.json({ ok: true, email: user.email, username: user.username });
-  } catch (e: any) {
+  } catch (error) {
+    const e = error as { code?: number; message?: string };
     if (e.code === 11000) {
       const field = e.message?.includes('username') ? 'username' : 'email';
       return NextResponse.json({ error: field === 'username' ? 'This username is already taken' : 'An account with this email already exists' }, { status: 400 });
     }
-    console.error('Registration error:', e);
+    console.error('Registration error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

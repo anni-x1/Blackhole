@@ -94,7 +94,7 @@ This project uses **Vitest** for unit and integration testing.
 
 ```bash
 # Run tests once
-npx vitest run
+npm test
 
 # Run tests in watch mode
 npx vitest
@@ -107,6 +107,13 @@ To check for code quality and style issues:
 ```bash
 npm run lint
 ```
+
+### Continuous Integration
+
+This project includes a **CI Pipeline** using GitHub Actions. Every push to the `main` branch and all pull requests automatically trigger:
+1. **Linting:** Checks for code style and potential errors.
+2. **Build:** Ensures the Next.js application builds successfully.
+3. **Tests:** Runs the full suite of Vitest tests.
 
 ## 🛡️ Security Architecture
 
