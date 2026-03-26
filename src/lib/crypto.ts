@@ -137,7 +137,7 @@ export async function decryptVault(
       iv: new Uint8Array(iv),
     },
     key,
-    ciphertext
+    new Uint8Array(ciphertext)
   );
 
   const dec = new TextDecoder();
