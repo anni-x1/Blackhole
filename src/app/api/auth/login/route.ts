@@ -17,9 +17,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Too many login attempts. Please try again later.' }, { status: 429 });
     }
 
-    const { emailOrUsername, keyAuth } = await request.json();
+    const { emailOrUsername, keyAuth, force } = await request.json();
 
     if (typeof emailOrUsername !== 'string' || typeof keyAuth !== 'string') {
+      return NextResponse.json({ error: 'Invalid input types' }, { status: 400 });
+    }
+
+    if (force !== undefined && typeof force !== 'boolean') {
       return NextResponse.json({ error: 'Invalid input types' }, { status: 400 });
     }
 
@@ -64,7 +68,7 @@ export async function POST(request: Request) {
 
     // Block if session is active AND it's not the same session as the one in the current cookie.
     // This allows users to re-login (unlock) after a page reload without waiting for timeout.
-    if (isSessionActive && user.activeSessionId !== session.sessionId) {
+    if (!force && isSessionActive && user.activeSessionId !== session.sessionId) {
       const lastActiveDate = new Date(user.lastActiveAt);
       const secondsAgo = Math.floor((Date.now() - lastActiveDate.getTime()) / 1000);
       const timeStr = secondsAgo < 60 ? `${secondsAgo}s ago` : `${Math.floor(secondsAgo/60)}m ago`;

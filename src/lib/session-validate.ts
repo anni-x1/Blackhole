@@ -16,7 +16,11 @@ export async function validateAndRefreshSession(session: SessionData): Promise<I
   const userSessionId = user.activeSessionId;
   if (userSessionId !== session.sessionId) return null;
 
-  user.lastActiveAt = new Date();
-  await user.save();
+  const now = Date.now();
+  const lastActive = user.lastActiveAt ? new Date(user.lastActiveAt).getTime() : 0;
+  if (now - lastActive > 60 * 1000) {
+    user.lastActiveAt = new Date(now);
+    await user.save();
+  }
   return user;
 }

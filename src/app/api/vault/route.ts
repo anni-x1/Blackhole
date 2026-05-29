@@ -43,7 +43,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { vault: envelope } = await request.json();
+    const body = await request.json();
+    const envelope = body?.vault;
+    const clientVersion = body?.version;
 
     if (!envelope || !envelope.ciphertext) {
       return NextResponse.json({ error: 'Invalid vault data' }, { status: 400 });
@@ -57,27 +59,46 @@ export async function POST(request: Request) {
     const existingVault = await Vault.findOne({ user: session.userId });
 
     if (existingVault) {
-        // Optimistic Locking: Simple increment for now
-        existingVault.ciphertext = envelope.ciphertext;
-        existingVault.iv = envelope.iv;
-        existingVault.salt = envelope.salt;
-        existingVault.kdfParams = {
-            kdf: envelope.kdf,
-            iterations: envelope.iterations
-        };
-        existingVault.version += 1;
-        await existingVault.save();
-    } else {
-        await Vault.create({
-            user: session.userId,
+      if (clientVersion === undefined || existingVault.version !== clientVersion) {
+        return NextResponse.json({ error: 'Sync Conflict' }, { status: 409 });
+      }
+
+      const updatedVault = await Vault.findOneAndUpdate(
+        { user: session.userId, version: clientVersion },
+        {
+          $set: {
             ciphertext: envelope.ciphertext,
             iv: envelope.iv,
             salt: envelope.salt,
             kdfParams: {
-                kdf: envelope.kdf,
-                iterations: envelope.iterations
+              kdf: envelope.kdf,
+              iterations: envelope.iterations
             }
-        });
+          },
+          $inc: { version: 1 }
+        },
+        { new: true }
+      );
+
+      if (!updatedVault) {
+        return NextResponse.json({ error: 'Sync Conflict' }, { status: 409 });
+      }
+    } else {
+      if (clientVersion !== undefined && clientVersion !== 0) {
+        return NextResponse.json({ error: 'Sync Conflict' }, { status: 409 });
+      }
+
+      await Vault.create({
+        user: session.userId,
+        ciphertext: envelope.ciphertext,
+        iv: envelope.iv,
+        salt: envelope.salt,
+        kdfParams: {
+          kdf: envelope.kdf,
+          iterations: envelope.iterations
+        },
+        version: 1
+      });
     }
 
     return NextResponse.json({ ok: true });
