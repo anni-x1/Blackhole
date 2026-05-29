@@ -200,11 +200,16 @@ export function generateUUID(): string {
     return window.crypto.randomUUID();
   }
 
-  // Gracefully fallback to Node's native require('crypto').randomUUID() structure if in serverless/SSR scope
+  // Gracefully fallback to Node's native globalThis.crypto if in serverless/SSR scope
+  if (typeof globalThis !== 'undefined' && globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID();
+  }
+
+  // Gracefully fallback to Node's native module dynamically loaded/required through eval or import (using eval('require') to bypass typescript analysis)
   if (typeof require !== 'undefined') {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const nodeCrypto = require('crypto');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const nodeCrypto = eval('require')('crypto');
       if (nodeCrypto && typeof nodeCrypto.randomUUID === 'function') {
         return nodeCrypto.randomUUID();
       }
