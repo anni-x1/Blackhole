@@ -1,7 +1,7 @@
 import { PlaintextVault, VaultEnvelope } from '../types/vault';
 
 // --- Configuration Constants ---
-export const PBKDF2_ITERATIONS = 600000;
+export const PBKDF2_ITERATIONS = 250000;
 export const SALT_LENGTH = 16; // bytes
 export const IV_LENGTH = 12; // bytes (96 bits for AES-GCM)
 export const KEY_LENGTH = 256; // bits
