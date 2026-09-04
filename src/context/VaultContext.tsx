@@ -39,6 +39,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   
   const keyRef = useRef<CryptoKey | null>(null);
   const saltRef = useRef<string | null>(null);
+  const vaultVersionRef = useRef<number | undefined>(undefined);
   const lastActivityRef = useRef<number>(Date.now());
 
   const clearSessionState = useCallback(() => {
@@ -48,6 +49,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     setVaultData(null);
     keyRef.current = null;
     saltRef.current = null;
+    vaultVersionRef.current = undefined;
   }, []);
 
   const checkSession = useCallback(async (): Promise<boolean> => {
@@ -231,6 +233,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
       if (vaultRes.ok) {
         const { vault: envelope } = await vaultRes.json();
         const plaintext = await decryptVault(keyVault, envelope);
+        vaultVersionRef.current = envelope.version;
         setVaultData(plaintext);
         setIsUnlocked(true);
       } else if (vaultRes.status === 404) {
@@ -254,12 +257,11 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
 
   const saveVault = async (newData: PlaintextVault) => {
     if (!keyRef.current || !saltRef.current) throw new Error('Vault locked');
-    setVaultData(newData);
     const envelope = await encryptVault(keyRef.current, newData, saltRef.current);
     const res = await fetch('/api/vault', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ vault: envelope }),
+      body: JSON.stringify({ vault: envelope, version: vaultVersionRef.current }),
       credentials: 'include',
     });
 
@@ -269,8 +271,17 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
       throw new Error('Session expired');
     }
     if (!res.ok) {
-      throw new Error('Failed to save vault');
+      const data = await res.json().catch(() => null);
+      throw new Error(data?.error || 'Failed to save vault');
     }
+
+    const data = await res.json();
+    if (typeof data.version !== 'number') {
+      throw new Error('Vault save response was invalid');
+    }
+
+    vaultVersionRef.current = data.version;
+    setVaultData({ ...newData, meta: { ...newData.meta, version: data.version } });
   };
 
   const exportEncryptedVault = async (): Promise<EncryptedVaultExport> => {

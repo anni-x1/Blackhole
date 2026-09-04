@@ -58,6 +58,8 @@ export async function POST(request: Request) {
     
     const existingVault = await Vault.findOne({ user: session.userId });
 
+    let savedVersion: number;
+
     if (existingVault) {
       if (clientVersion === undefined || existingVault.version !== clientVersion) {
         return NextResponse.json({ error: 'Sync Conflict' }, { status: 409 });
@@ -83,12 +85,14 @@ export async function POST(request: Request) {
       if (!updatedVault) {
         return NextResponse.json({ error: 'Sync Conflict' }, { status: 409 });
       }
+
+      savedVersion = updatedVault.version;
     } else {
       if (clientVersion !== undefined && clientVersion !== 0) {
         return NextResponse.json({ error: 'Sync Conflict' }, { status: 409 });
       }
 
-      await Vault.create({
+      const createdVault = await Vault.create({
         user: session.userId,
         ciphertext: envelope.ciphertext,
         iv: envelope.iv,
@@ -99,9 +103,11 @@ export async function POST(request: Request) {
         },
         version: 1
       });
+
+      savedVersion = createdVault.version;
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, version: savedVersion });
   } catch (err) {
     console.error('Vault save error:', err);
     return NextResponse.json({ error: 'Failed to save' }, { status: 500 });
